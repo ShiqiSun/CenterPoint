@@ -74,5 +74,6 @@ def build_from_cfg(cfg, registry, default_args=None):
     if default_args is not None:
         for name, value in default_args.items():
             args.setdefault(name, value)
-
+    #Todo
+    print(obj_cls)
     return obj_cls(**args)

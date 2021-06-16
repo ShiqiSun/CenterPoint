@@ -1,6 +1,8 @@
 import itertools
 import logging
 
+#test
+
 from det3d.utils.config_tool import get_downsample_factor
 
 tasks = [
@@ -19,37 +21,39 @@ target_assigner = dict(
     tasks=tasks,
 )
 
+
 # model settings
 model = dict(
-    type="VoxelNet",
+    type="PointPillars",
     pretrained=None,
     reader=dict(
-        type="VoxelFeatureExtractorV3",
+        type="PillarFeatureNet",
+        num_filters=[64, 64],
         num_input_features=5,
+        with_distance=False,
+        voxel_size=(0.2, 0.2, 8),
+        pc_range=(-51.2, -51.2, -5.0, 51.2, 51.2, 3.0),
     ),
-    backbone=dict(
-        type="SpMiddleResNetFHD", num_input_features=5, ds_factor=8
-    ),
+    backbone=dict(type="PointPillarsScatter", ds_factor=1),
     neck=dict(
         type="RPN",
-        layer_nums=[5, 5],
-        ds_layer_strides=[1, 2],
-        ds_num_filters=[128, 256],
-        us_layer_strides=[1, 2],
-        us_num_filters=[256, 256],
-        num_input_features=256,
+        layer_nums=[3, 5, 5],
+        ds_layer_strides=[2, 2, 2],
+        ds_num_filters=[64, 128, 256],
+        us_layer_strides=[0.5, 1, 2],
+        us_num_filters=[128, 128, 128],
+        num_input_features=64,
         logger=logging.getLogger("RPN"),
     ),
     bbox_head=dict(
+        # type='RPNHead',
         type="CenterHead",
-        in_channels=sum([256, 256]),
+        in_channels=sum([128, 128, 128]),
         tasks=tasks,
         dataset='nuscenes',
         weight=0.25,
         code_weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2, 1.0, 1.0],
         common_heads={'reg': (2, 2), 'height': (1, 2), 'dim':(3, 2), 'rot':(2, 2), 'vel': (2, 2)}, # (output_channel, num_conv)
-        share_conv_channel=64,
-        dcn_head=False 
     ),
 )
 
@@ -66,6 +70,7 @@ train_cfg = dict(assigner=assigner)
 
 test_cfg = dict(
     post_center_limit_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
+    max_per_img=500,
     nms=dict(
         nms_pre_max_size=1000,
         nms_post_max_size=83,
@@ -74,19 +79,18 @@ test_cfg = dict(
     score_threshold=0.1,
     pc_range=[-51.2, -51.2],
     out_size_factor=get_downsample_factor(model),
-    voxel_size=[0.1, 0.1]
+    voxel_size=[0.2, 0.2]
 )
-
 
 # dataset settings
 dataset_type = "NuScenesDataset"
 nsweeps = 10
-data_root = "/data_volumn/nuscenes/v1_0/"
+data_root = "/data_volumn/nuscenes/v1_0"
 
 db_sampler = dict(
     type="GT-AUG",
     enable=False,
-    db_info_path=data_root + "/dbinfos_train_10sweeps_withvelo.pkl",
+    db_info_path= data_root + "/dbinfos_train_10sweeps_withvelo.pkl",
     sample_groups=[
         dict(car=2),
         dict(truck=3),
@@ -135,9 +139,9 @@ val_preprocessor = dict(
 
 voxel_generator = dict(
     range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0],
-    voxel_size=[0.1, 0.1, 0.2],
-    max_points_in_voxel=10,
-    max_voxel_num=[90000, 120000],
+    voxel_size=[0.2, 0.2, 8],
+    max_points_in_voxel=20,
+    max_voxel_num=[30000, 60000],
 )
 
 train_pipeline = [
@@ -195,15 +199,14 @@ data = dict(
 )
 
 
-
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
-
 # optimizer
 optimizer = dict(
     type="adam", amsgrad=0.0, wd=0.01, fixed_wd=True, moving_average=False,
 )
+# muti 5 of lr_max
 lr_config = dict(
-    type="one_cycle", lr_max=0.001, moms=[0.95, 0.85], div_factor=10.0, pct_start=0.4,
+    type="one_cycle", lr_max=0.005, moms=[0.95, 0.85], div_factor=10.0, pct_start=0.4,
 )
 
 checkpoint_config = dict(interval=1)
@@ -212,15 +215,17 @@ log_config = dict(
     interval=5,
     hooks=[
         dict(type="TextLoggerHook"),
+        # dict(type='TensorboardLoggerHook')
     ],
 )
 # yapf:enable
 # runtime settings
 total_epochs = 20
-device_ids = range(2)
+# device_ids = range(8)
+device_ids = range(1)
 dist_params = dict(backend="nccl", init_method="env://")
 log_level = "INFO"
 work_dir = './work_dirs/{}/'.format(__file__[__file__.rfind('/') + 1:-3])
-load_from = None 
-resume_from = None  
+load_from = None
+resume_from = None 
 workflow = [('train', 1)]

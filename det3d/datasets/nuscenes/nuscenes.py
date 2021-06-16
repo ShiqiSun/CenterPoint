@@ -39,7 +39,8 @@ class NuScenesDataset(PointCloudDataset):
         pipeline=None,
         class_names=None,
         test_mode=False,
-        version="v1.0-trainval",
+        # version="v1.0-trainval",
+        version="v1.0-mini",
         **kwargs,
     ):
         super(NuScenesDataset, self).__init__(

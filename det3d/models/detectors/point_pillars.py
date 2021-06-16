@@ -17,6 +17,9 @@ class PointPillars(SingleStageDetector):
         super(PointPillars, self).__init__(
             reader, backbone, neck, bbox_head, train_cfg, test_cfg, pretrained
         )
+        #Todo
+        # exit()
+
 
     def extract_feat(self, data):
         input_features = self.reader(

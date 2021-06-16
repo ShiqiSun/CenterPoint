@@ -197,7 +197,8 @@ def main():
         os.makedirs(args.work_dir)
 
     save_pred(predictions, args.work_dir)
-
+    # print(args.testset)
+    # exit()
     result_dict, _ = dataset.evaluation(copy.deepcopy(predictions), output_dir=args.work_dir, testset=args.testset)
 
     if result_dict is not None:

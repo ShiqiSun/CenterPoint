@@ -83,12 +83,12 @@ test_cfg = dict(
 # dataset settings
 dataset_type = "NuScenesDataset"
 nsweeps = 10
-data_root = "data/nuScenes"
+data_root = "/data_volumn/nuscenes/v1_0"
 
 db_sampler = dict(
     type="GT-AUG",
     enable=False,
-    db_info_path="data/nuScenes/dbinfos_train_10sweeps_withvelo.pkl",
+    db_info_path= data_root + "/dbinfos_train_10sweeps_withvelo.pkl",
     sample_groups=[
         dict(car=2),
         dict(truck=3),
@@ -159,8 +159,8 @@ test_pipeline = [
     dict(type="Reformat"),
 ]
 
-train_anno = "data/nuScenes/infos_train_10sweeps_withvelo_filter_True.pkl"
-val_anno = "data/nuScenes/infos_val_10sweeps_withvelo_filter_True.pkl"
+train_anno = data_root + "/infos_train_10sweeps_withvelo_filter_True.pkl"
+val_anno = data_root + "/infos_val_10sweeps_withvelo_filter_True.pkl"
 test_anno = None
 
 data = dict(
@@ -218,7 +218,8 @@ log_config = dict(
 # yapf:enable
 # runtime settings
 total_epochs = 20
-device_ids = range(8)
+# device_ids = range(8)
+device_ids = range(1)
 dist_params = dict(backend="nccl", init_method="env://")
 log_level = "INFO"
 work_dir = './work_dirs/{}/'.format(__file__[__file__.rfind('/') + 1:-3])

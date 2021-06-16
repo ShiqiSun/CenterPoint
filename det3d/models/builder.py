@@ -34,7 +34,6 @@ def build_reader(cfg):
 def build_backbone(cfg):
     return build(cfg, BACKBONES)
 
-
 def build_neck(cfg):
     return build(cfg, NECKS)
 

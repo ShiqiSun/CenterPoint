@@ -17,6 +17,10 @@ from det3d.models.utils import change_default_args
 from .. import builder
 from ..registry import NECKS
 from ..utils import build_norm_layer
+from attention_conv2d import AttentionConv2D
+
+attention_flag = True
+
 
 
 @NECKS.register_module
@@ -75,6 +79,7 @@ class RPN(nn.Module):
                 stride=self._layer_strides[i],
             )
             blocks.append(block)
+            #TODO
             if i - self._upsample_start_idx >= 0:
                 stride = (self._upsample_strides[i - self._upsample_start_idx])
                 if stride > 1:
@@ -94,20 +99,38 @@ class RPN(nn.Module):
                     )
                 else:
                     stride = np.round(1 / stride).astype(np.int64)
-                    deblock = Sequential(
-                        nn.Conv2d(
-                            num_out_filters,
-                            self._num_upsample_filters[i - self._upsample_start_idx],
-                            stride,
-                            stride=stride,
-                            bias=False,
-                        ),
-                        build_norm_layer(
-                            self._norm_cfg,
-                            self._num_upsample_filters[i - self._upsample_start_idx],
-                        )[1],
-                        nn.ReLU(),
-                    )
+                    if attention_flag == True:
+                        deblock = Sequential(
+                            AttentionConv2D(
+                                num_out_filters,
+                                self._num_upsample_filters[i - self._upsample_start_idx],
+                                stride,
+                                stride=stride,
+                                bias=False,
+                            ),
+                            build_norm_layer(
+                                self._norm_cfg,
+                                self._num_upsample_filters[i - self._upsample_start_idx],
+                            )[1],
+                            nn.ReLU(),
+                        )
+                        # print("Test Right!")
+                        # exit()
+                    else:
+                        deblock = Sequential(
+                            nn.Conv2d(
+                                num_out_filters,
+                                self._num_upsample_filters[i - self._upsample_start_idx],
+                                stride,
+                                stride=stride,
+                                bias=False,
+                            ),
+                            build_norm_layer(
+                                self._norm_cfg,
+                                self._num_upsample_filters[i - self._upsample_start_idx],
+                            )[1],
+                            nn.ReLU(),
+                        )
                 deblocks.append(deblock)
         self.blocks = nn.ModuleList(blocks)
         self.deblocks = nn.ModuleList(deblocks)
